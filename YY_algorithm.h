@@ -1,6 +1,7 @@
 #ifndef _YY_ALGORITHM_H_
 #define _YY_ALGORITHM_H_
 #include "YY_iterator.h"
+#include <corecrt_memcpy_s.h>
 namespace YY
 {
 	//以下是整组的distance函数
@@ -76,7 +77,7 @@ namespace YY
 	template<typename T>
 	void copy(T* source, T* destination, int n, _true_type)
 	{
-		memcpy_s(destination, n, source, n);
+		memcpy_s(destination, n*sizeof(T), source, n * sizeof(T));
 	}
 
 	//拷贝一个数组，其元素为任意型别，视情况采用最有效率的拷贝手段
@@ -90,8 +91,17 @@ namespace YY
 	inline void copy(ForwardIterator source, ForwardIterator end, OutputIterator destination)
 	{
 		typename iterator_traits<ForwardIterator>::difference_type size = distance(source, end);
-		using value_type=typename ForwardIterator::value_type;
+		using value_type=typename iterator_traits<ForwardIterator>::value_type;
 		copy(source, destination, size, typename _type_traits<value_type>::has_trivial_copy_constructor());
+	}
+
+	template<typename InputIterator,typename OutputIterator>
+	inline void copy_backward(InputIterator first1, InputIterator last1, OutputIterator last2)
+	{
+		while (last1 != first1)
+		{
+			*(--last2) = *(--last1);
+		}
 	}
 	template<typename T>
 	inline T max(T lhs, T rhs)

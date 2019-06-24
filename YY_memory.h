@@ -58,7 +58,8 @@ namespace YY
 	ForwardIterator _uninitialized_copy_aux(ForwardIterator first, ForwardIterator last, ForwardIterator dest, _true_type)
 	{
 		typename iterator_traits<ForwardIterator>::difference_type size = distance(first, last);
-		memcpy_s(dest,size , first, size);
+		using value_type=typename iterator_traits<ForwardIterator>::value_type;
+		memcpy_s(dest,size*sizeof(value_type) , first, size*sizeof(value_type));
 		advance(dest, size);
 		return dest;
 	}

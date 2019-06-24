@@ -50,9 +50,6 @@ namespace YY
 	{
 		_destory(first, last, value_type(first));
 	}
-
-
-	
 }
 
 

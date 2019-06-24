@@ -21,8 +21,7 @@ namespace YY
 		iterator end_of_storage;//表示目前可用空间的尾
 
 		void insert_aux(iterator position, const T& x);
-		//从position开始，插入n个元素，元素初值为x
-		void insert(iterator position, size_type n, const T& x);
+		
 		void deallocate()
 		{
 			if (start)
@@ -37,6 +36,12 @@ namespace YY
 		}
 
 	public:
+		//从position开始，插入n个元素，元素初值为x
+		void insert(iterator position, size_type n, const T& x);
+		void insert(iterator position, const T& x)
+		{
+			insert_aux(position, x);
+		}
 		iterator begin()
 		{
 			return start;
@@ -114,7 +119,7 @@ namespace YY
 			{
 				copy(last, finish, first);
 			}
-			for (difference_type i = last - first; i > 0; --i)
+			for (difference_type i = distance(first,last); i > 0; --i)
 			{
 				--finish;
 				destory(finish);
@@ -219,7 +224,7 @@ namespace YY
 				{//插入点之后的现有元素大于新增元素个数
 					uninitialized_copy(finish - n, finish, finish);
 					finish += n;//将vector尾端标记后移
-					std::copy_backward(position, old_finish - n, old_finish);
+					copy_backward(position, old_finish - n, old_finish);
 					fill_n(position, n, x_copy);
 				}
 				else
@@ -228,7 +233,7 @@ namespace YY
 					finish += n - elems_after;
 					uninitialized_copy(position, old_finish, finish);
 					finish += elems_after;
-					fill(position, old_finish, x_copy);
+					std::fill(position, old_finish, x_copy);
 				}
 			}
 			else
