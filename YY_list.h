@@ -130,10 +130,21 @@ namespace YY
 				first.node->prev = tmp;
 			}
 		}
+		//将[first,last)内的所有元素进行排序
+		void sort_aux(iterator first, iterator last);
 	public:
 		//构造函数
 		list() { empty_initialize(); }
-
+		list(std::initializer_list<T> const& x)
+		{
+			empty_initialize();
+			auto first = x.begin();
+			auto last = x.end();
+			while (first != last)
+			{
+				push_back(*first++);
+			}
+		}
 		iterator begin()
 		{
 			return node->next;
@@ -213,6 +224,20 @@ namespace YY
 		void unique();
 		//将x接合于position所指位置之前。x必须不同于*this
 		void splice(iterator position, list& x);
+		//将i所指元素接合于position所指位置之前。position和i可指向同一个list
+		void splice(iterator position, list&, iterator i);
+		//将[first,last)内的所有元素接合于position所指位置之前
+		//position和[first,last)可指向同一个list
+		//但position不能位于[first,last)之内
+		void splice(iterator position, iterator first, iterator last);
+		//merge()将x合并到*this身上。两个lists的内容都必须先经过递增排序
+		void merge(list& x);
+		//reverse()将*this的内容逆向重置
+		void reverse();
+		//由于list不能使用sort()，必须使用自己的sort()member function
+		//因为STL算法sort()只接受RandomAccessIterator
+		//本函数采用quick sort
+		void sort();
 	};
 	template<typename T, typename Alloc>
 	void list<T, Alloc>::clear()
@@ -260,11 +285,92 @@ namespace YY
 		}
 	}
 	template<typename T, typename Alloc>
-	void list<T, Alloc>::splice(iterator position, list& x)
+	void list<T, Alloc>::splice(iterator position, list & x)
 	{
-		if(&x!=this && )
+		if (&x != this && !x.empty())
+			transfer(position, x.begin(), x.end());
+	}
+	template<typename T, typename Alloc>
+	void list<T, Alloc>::splice(iterator position, list&, iterator i)
+	{
+		iterator j = i;
+		++j;
+		if (position == i || position == j)
+			return;
+		transfer(position, i, j);
+	}
+	template<typename T, typename Alloc>
+	void list<T, Alloc>::splice(iterator position, iterator first, iterator last)
+	{
+		if (first != last)
+			transfer(position, first, last);
+	}
+	template<typename T, typename Alloc>
+	void list<T, Alloc>::merge(list & x)
+	{
+		iterator first1 = begin();
+		iterator last1 = end();
+		iterator first2 = x.begin();
+		iterator last2 = x.end();
+
+		//注意，前提是两个lists都已经递增排序
+		while (first1 != last1 && first2 != last2)
+		{
+			if (*first2 < *first1)
+			{
+				iterator next = first2;
+				transfer(first1, first2, ++next);
+				first2 = next;
+			}
+			else
+				++first1;
+		}
+		if (first2 != last2)
+			transfer(last1, first2, last2);
+	}
+	template<typename T, typename Alloc>
+	void list<T, Alloc>::reverse()
+	{
+		//以下判断，如果是空链表，或仅有一个元素，就不进行任何操作
+		//使用size()==0||size()==1来判断，虽然也可以，但是比较慢
+		if (node->next == node || node->next->next == node)
+			return;
+		iterator first = begin();
+		++first;
+		while (first != end())
+		{
+			iterator old = first;
+			++first;
+			transfer(begin(), old, first);
+		}
+	}
+	template<typename T,typename Alloc>
+	void list<T, Alloc>::sort_aux(iterator first, iterator last)
+	{
+		if (first.node->next == last.node || first.node == last.node)
+			return;
+		value_type pivot = *first;
+		iterator cur = first;
+		iterator mid = cur;
+		while (++cur != last)
+		{
+			if (*cur < pivot)
+			{
+				iter_swap(cur, ++mid);
+			}
+		}
+		iter_swap(first, mid);
+		sort_aux(first, mid);
+		sort_aux(++mid, last);
+	}
+	template<typename T,typename Alloc>
+	void list<T, Alloc>::sort()
+	{
+		//以下判断，如果是空链表或者只有一个元素，就不进行操作
+		if (node->next == node || node->next->next == node)
+			return;
+		sort_aux(begin(), end());
 	}
 }
-
 
 #endif

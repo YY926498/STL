@@ -108,6 +108,14 @@ namespace YY
 	{
 		return lhs > rhs ? lhs : rhs;
 	}
+	template<typename Iterator>
+	inline void iter_swap(Iterator lhs, Iterator rhs)
+	{
+		using value_type = typename Iterator::value_type;
+		value_type tmp = *lhs;
+		*lhs = *rhs;
+		*rhs = tmp;
+	}
 }
 
 #endif
