@@ -64,35 +64,84 @@ namespace YY
 		return first;
 	}
 
-	//拷贝一个数组，其元素型别拥有non-trivial copy constructors
-	template<typename T>
-	void copy(T* source, T* destination, int n, _false_type)
+	template<typename RandomAccessIterator,typename OutputIterator,typename Distance>
+	inline OutputIterator _copy_d(RandomAccessIterator first, RandomAccessIterator last, OutputIterator result, Distance*)
 	{
-		while (n-- > 0)
+		//以n决定循环的次数。速度快
+		for (Distance n = last - first; n > 0; --n, ++result, ++first)
 		{
-			construct(destination++, *source++);
+			*result = *first;
 		}
+		return result;
 	}
-	//拷贝一个数组，其元素型别拥有trivial copy constructors
+	//以下版本适用于“指针所指对象具备trivial assigment operator”
 	template<typename T>
-	void copy(T* source, T* destination, int n, _true_type)
+	inline T* _copy_t(const T* first,const T* last,T* result,_true_type)
 	{
-		memcpy_s(destination, n*sizeof(T), source, n * sizeof(T));
+		memmove(result, first, sizeof(T) * (last - first));
+		return result + (last - first);
+	}
+	//以下版本适用于“指针所指对象具备non-trivial assignment operator”
+	template<typename T>
+	inline T* _copy_t(const T* first, const T* last, T* result, _false_type)
+	{
+		//原生指针是一种RandomAccessIterator，所以交给_copy_d()完成
+		return _copy_d(first, last, result, (ptrdiff_t*)0);
+	}
+	//特化InputIterator
+	template<typename InputIterator,typename OutputIterator>
+	inline OutputIterator _copy(InputIterator first, InputIterator last, OutputIterator result, input_iterator_tag)
+	{
+		//与迭代器等同与否，决定循环是否继续。速度慢
+		for (; first != last; ++first, ++result)
+		{
+			*result = *first;
+		}
+		return result;
+	}
+	//特化RandomAccessIterator
+	template<typename RandomAccessIterator,typename OutputIterator>
+	inline OutputIterator _copy(RandomAccessIterator first, RandomAccessIterator last, OutputIterator result, random_access_iterator_tag)
+	{
+		//又划分出一个函数，为的是其他地方也可能用到
+		return _copy_d(first, last, result, distance_type(first));
+	}
+	//_copy_dispatch
+	template<typename T>	
+	T* _copy_dispatch(T* first, T* last, T* result)
+	{
+		using t=typename _type_traits<T>::has_trivial_assignment_operator;
+		return _copy_t(first, last, result, t{});
+	}
+	template<typename T>
+	T* _copy_dispatch(const T* first, const T* last, T* result)
+	{
+		using t=typename _type_traits<T>::has_trivial_assignment_operator;
+		return _copy_t(first, last, result, t{});
+	}
+	template<typename InputIterator, typename OutputIterator>
+	OutputIterator _copy_dispatch(InputIterator first, InputIterator last, OutputIterator result)
+	{
+		return _copy(first, last, result, iterator_category(first));
 	}
 
-	//拷贝一个数组，其元素为任意型别，视情况采用最有效率的拷贝手段
-	template<typename T>
-	inline void copy(T* source, T* destination, int n)
+	//特殊形式1
+	inline char* copy(const char* first, const char* last, char* result)
 	{
-		copy(source, destination,n, typename _type_traits<T>::has_trivial_copy_constructor());
+		memmove(result, first, last - first);
+		return result + (last - first);
 	}
-
-	template<typename ForwardIterator,typename OutputIterator>
-	inline void copy(ForwardIterator source, ForwardIterator end, OutputIterator destination)
+	//特殊形式2
+	inline wchar_t* copy(const wchar_t* first, const wchar_t* last, wchar_t* result)
 	{
-		typename iterator_traits<ForwardIterator>::difference_type size = distance(source, end);
-		using value_type=typename iterator_traits<ForwardIterator>::value_type;
-		copy(source, destination, size, typename _type_traits<value_type>::has_trivial_copy_constructor());
+		memmove(result, first, sizeof(wchar_t) * (last - first));
+		return result + (last - first);
+	}
+	//copy完全泛化版本
+	template<typename InputIterator,typename OutputIterator>
+	inline OutputIterator copy(InputIterator first, InputIterator last, OutputIterator result)
+	{
+		return _copy_dispatch(first, last, result);
 	}
 
 	template<typename InputIterator,typename OutputIterator>

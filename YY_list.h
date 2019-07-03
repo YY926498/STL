@@ -134,8 +134,8 @@ namespace YY
 		void sort_aux(iterator first, iterator last);
 	public:
 		//¹¹Ôìº¯Êý
-		list() { empty_initialize(); }
-		list(std::initializer_list<T> const& x)
+		list():node(nullptr){ empty_initialize(); }
+		list(std::initializer_list<T> const& x):node(nullptr)
 		{
 			empty_initialize();
 			auto first = x.begin();
@@ -144,6 +144,12 @@ namespace YY
 			{
 				push_back(*first++);
 			}
+		}
+		explicit list(size_type n, const value_type& x = value_type{}):node(nullptr)
+		{
+			empty_initialize();
+			while (n-- > 0)
+				push_back(x);
 		}
 		iterator begin()
 		{

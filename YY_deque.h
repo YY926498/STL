@@ -109,16 +109,16 @@ namespace YY
 			return *this;
 		}
 		//使用+=来替代单独的运算符
-		self operator+(difference_type n)const
+		self operator+(difference_type n)
 		{
 			self tmp = *this;
 			return tmp += n;
 		}
-		self& operator-=(difference_type n)const
+		self& operator-=(difference_type n)
 		{
 			return *this += -n;
 		}
-		self operator-(difference_type n)const
+		self operator-(difference_type n)
 		{
 			self tmp = *this;
 			return tmp -= n;
@@ -206,6 +206,15 @@ namespace YY
 		deque(int n, const value_type& value = value_type{}) :start(), finish(), map(nullptr), map_size(0)
 		{
 			fill_initialize(n, value);
+		}
+		deque(const std::initializer_list<T>& lhs) :start(), finish(), map(nullptr), map_size(0)
+		{
+			create_map_and_nodes(lhs.size());//把deque的结构都产生并安排好
+			auto beg = start;
+			for (auto cur = lhs.begin(); cur != lhs.end(); ++cur,++beg)
+			{
+				*beg = *cur;
+			}
 		}
 		void push_back(const value_type& t)
 		{
@@ -385,7 +394,7 @@ namespace YY
 			size_type new_map_size = map_size + max(map_size, nodes_to_add) + 2;
 			//配置一块新空间，准备给map使用
 			map_pointer new_map = map_allocator::allocate(new_map_size);
-			new_nstart = new_map + (new_map - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+			new_nstart = new_map + (new_map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
 			//把原内容拷贝过来
 			copy(start.node, finish.node + 1, new_nstart);
 			//释放原map
@@ -464,7 +473,7 @@ namespace YY
 				copy(last, finish, first);
 				iterator new_finish = finish - n;
 				destory(new_finish, finish);
-				for (map_pointer cur = new_finish.node + 1; cur <= finihs.node; ++cur)
+				for (map_pointer cur = new_finish.node + 1; cur <= finish.node; ++cur)
 				{
 					data_allocator::deallocate(*cur, iterator::buffer_size());
 				}
@@ -478,38 +487,51 @@ namespace YY
 	{
 		if (position.cur == start.cur)
 		{//如果插入点是deque的最前端，交给push_front去做
-			push_front(x);
+			push_front(value);
 			return start;
 		}
 		else if (position.cur == finish.cur)
 		{//如果插入点是deque的尾端，交给push_back去做
-			push_back(x);
+			push_back(value);
 			iterator tmp = finish;
 			--tmp;
 			return tmp;
 		}
 		else
 		{
-			insert_aux(position, x);
+			insert_aux(position, value);
 		}
 	}
 	template<typename T, typename Alloc, size_t BufSize>
 	typename deque<T, Alloc, BufSize>::iterator deque<T, Alloc, BufSize>::insert_aux(iterator position, const value_type& value)
 	{
-		difference_type index = pos - start;
-		value_type x_copy = x;
+		difference_type index = position - start;
+		value_type x_copy = value;
 		if (index < size() / 2)
-		{
+		{//如果插入点之前的元素比较少
 			push_front(front());//在最前端加入与第一元素同值的元素
 			iterator front1 = start;
 			++front1;
 			iterator front2 = front1;
 			++front2;
-			pos = start + index;
-			iterator pos1 = pos;
+			position = start + index;
+			iterator pos1 = position;
 			++pos1;
-			copy(front2, pos1, front1);//元素移动
+//			copy(front2, front1, distance(front2, pos1));
+//			copy(front2, pos1, front1);//元素移动
 		}
+		else
+		{
+			push_back(back());
+			iterator back1 = finish;
+			--back1;
+			iterator back2 = back1;
+			--back2;
+			position = start + index;
+			copy_backward(position, back2, back1);
+		}
+		*position = x_copy;
+		return position;
 	}
 }
 

@@ -68,6 +68,13 @@ namespace YY
 		}
 
 		vector() :start(nullptr), finish(nullptr), end_of_storage(nullptr) {}
+		vector(const std::initializer_list<T>& lhs) :start(nullptr), finish(nullptr), end_of_storage(nullptr)
+		{
+			for (auto cur = lhs.begin(); cur != lhs.end(); ++cur)
+			{
+				push_back(*cur);
+			}
+		}
 		vector(size_type n, const T& value) :start(nullptr), finish(nullptr), end_of_storage(nullptr) { fill_initialized(n, value); }
 		vector(int n, const T& value) :start(nullptr), finish(nullptr), end_of_storage(nullptr) { fill_initialized(n, value); }
 		vector(long n, const T& value) :start(nullptr), finish(nullptr), end_of_storage(nullptr) { fill_initialized(n, value); }

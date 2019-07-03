@@ -38,7 +38,11 @@ namespace YY
 	{
 		return _uninitialized_fill_n(first, n, x, value_type(first));
 	}
-
+	template<typename ForwardIterator,typename T>
+	inline ForwardIterator uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& value)
+	{
+		return uninitialized_fill_n(first, distance(first, last), value);
+	}
 	//以下就是否为POD型别，采取最适当的措施
 	//如果不是POD型别，就会派送到这里
 	template<typename ForwardIterator>
