@@ -4,14 +4,13 @@
 
 namespace YY
 {
-#define _STL_NULL_TMPL_ARGS <>
 	template<typename T, typename Alloc, size_t BufSize>
 	class deque;
 	template<typename T,typename Sequence=YY::deque<T>>
 	class stack
 	{
-		friend bool operator== _STL_NULL_TMPL_ARGS(const stack&, const stack&);
-		friend bool operator< _STL_NULL_TMPL_ARGS(const stack&, const stack&);
+		friend bool operator==(const stack&, const stack&);
+		friend bool operator< (const stack&, const stack&);
 	public:
 		using value_type = typename Sequence::value_type;
 		using size_type = typename Sequence::size_type;
@@ -21,7 +20,8 @@ namespace YY
 	protected:
 		Sequence c;//底层容器
 	public:
-		//以下完全利用Sequence c的操作，完成stack的操作
+		stack() = default;
+		//以下完全利用Sequence c的操作，完成stack的操作		
 		bool empty()const
 		{
 			return c.empty();
@@ -34,7 +34,7 @@ namespace YY
 		{
 			return c.back();
 		}
-		const_reference top() const
+		const_reference top () const
 		{
 			return c.back();
 		}

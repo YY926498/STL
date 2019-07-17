@@ -149,6 +149,7 @@ namespace YY
 		using value_type = T;
 		using pointer = T *;
 		using reference = T &;
+		using const_reference = const reference;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 		using iterator = _deque_iterator<T, T&, T*, BufSize>;
@@ -203,6 +204,7 @@ namespace YY
 		void reallocate_map(size_type nodes_to_add, bool add_at_front);
 		iterator insert_aux(iterator position, const value_type& value);
 	public:
+		deque() :start(), finish(), map(nullptr), map_size(0) {};
 		deque(int n, const value_type& value = value_type{}) :start(), finish(), map(nullptr), map_size(0)
 		{
 			fill_initialize(n, value);
@@ -218,6 +220,11 @@ namespace YY
 		}
 		void push_back(const value_type& t)
 		{
+			if (map == nullptr)
+			{
+				fill_initialize(1, t);
+				return;
+			}
 			if (finish.cur != finish.last - 1)
 			{
 				//最后缓冲区至少有两个元素备用空间
