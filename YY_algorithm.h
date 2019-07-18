@@ -165,6 +165,110 @@ namespace YY
 		*lhs = *rhs;
 		*rhs = tmp;
 	}
+
+
+
+	//堆算法
+	//下面是push_heap的实现细节
+	//以下这组push_back()不允许指定"大小比较标准"
+	template<typename RandomAccessIterator,typename Distance,typename T>
+	void _push_heap(RandomAccessIterator first, Distance holeIndex, Distance topIndex, T value)
+	{
+		Distance parent = (holeIndex - 1) / 2;//找出父节点
+		while (holeIndex > topIndex && *(first + parent) < value)
+		{
+			//尚未到达顶端，且父节点小于新值
+			*(first + holeIndex) = *(first + parent);
+			holeIndex = parent;
+			parent = (holeIndex - 1) / 2;
+		}//持续至顶端，或满足heap次序特性为止
+		*(first + holeIndex) = value;//完成插入操作
+	}
+	template<typename RandomAccessIterator,typename Distance, typename T>
+	inline void _push_heap_aux(RandomAccessIterator first, RandomAccessIterator last, Distance*, T*)
+	{
+		_push_heap(first, Distance((last - first) - 1), Distance(0), T(*(last - 1)));
+	}
+	template<typename RandomAccessIterator>
+	inline void push_heap(RandomAccessIterator first, RandomAccessIterator last)
+	{
+		//注意，此函数被调用时，新元素应已置于底部容器的最尾端
+		_push_heap_aux(first, last, distance_type(first), value_type(first));
+	}
+	//下面是pop_heap的实现细节
+	template<typename RandomAccessIterator,typename Distance,typename T>
+	void _adjust_heap(RandomAccessIterator first, Distance holeIndex, Distance len, T value)
+	{
+		Distance secondChild = 2 * holeIndex + 2;//洞节点的右节点
+		while (secondChild < len && (value < *(first+secondChild) || value< *(first+(secondChild-1))))
+		{
+			//比较洞节点之左右两个值，然后以secondChild代表较大节点
+			if (*(first + secondChild) < *(first + (secondChild - 1)))
+				secondChild--;
+			*(first + holeIndex) = *(first + secondChild);
+			holeIndex = secondChild;
+			secondChild = 2 * holeIndex + 2;
+		}
+		*(first + holeIndex) = value;
+		if (secondChild == len && (value < *(first + (secondChild - 1))))
+		{
+			secondChild--;
+			*(first + holeIndex) = *(first + secondChild);
+			*(first + secondChild) = value;
+		}
+	}
+	//以下这组pop_heap不允许指定"大小比较标准"
+	template<typename RandomAccessIterator,typename T,typename Distance>
+	inline void _pop_heap(RandomAccessIterator first, RandomAccessIterator last,
+						  RandomAccessIterator result, T value, Distance*)
+	{
+		*result = *first;//设定尾值为首值，于是尾值即为欲求结果
+		_adjust_heap(first, Distance(0), Distance(last - first), value);
+		//以上重新调整heap，洞号为0，欲调整值为value
+	}
+	template<typename RandomAccessIterator,typename T>
+	inline void _pop_heap_aux(RandomAccessIterator first, RandomAccessIterator last, T*)
+	{
+		_pop_heap(first, last - 1, last - 1, T(*(last - 1)), distance_type(first));
+	}
+	template<typename RandomAccessIterator>
+	inline void pop_heap(RandomAccessIterator first, RandomAccessIterator last)
+	{
+		_pop_heap_aux(first, last, value_type(first));
+	}
+	//下面是sort_heap的算法细节
+	template<typename RandomAccessIterator>
+	void sort_heap(RandomAccessIterator first, RandomAccessIterator last)
+	{
+		//以下，每执行一次pop_heap，极值即被放在尾端
+		//扣除尾端再执行一次pop_heap，次极值又被放在新尾端。一直下去，最后即得到排序结果
+		while (last - first > 1)
+			pop_heap(first, last--);//每执行pop_heap一次，操作范围缩小1格
+	}
+	//下面是make_heap的算法细节
+	//以下这组make_heap()不允许指定"大小比较标准"
+	template<typename RandomAccessIterator,typename T,typename Distance>
+	void _make_heap(RandomAccessIterator first, RandomAccessIterator last, T*, Distance*)
+	{
+		if (last - first < 2)
+			return;//如果长度小于2，不必重新排列
+		Distance len = last - first;
+		//找出第一个需要重排的子树头部。由于任何叶节点都不需执行下溯
+		Distance holeIndex = (len - 2) / 2;
+		while (true)
+		{
+			//重排以holeIndex为首的子树
+			_adjust_heap(first, holeIndex, len, T(*(first + holeIndex)));
+			if (holeIndex == 0)
+				return;
+			--holeIndex;
+		}
+	}
+	template<typename RandomAccessIterator>
+	inline void make_heap(RandomAccessIterator first, RandomAccessIterator last)
+	{
+		_make_heap(first, last, value_type(first), distance_type(first));
+	}
 }
 
 #endif
