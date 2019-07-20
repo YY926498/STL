@@ -1,6 +1,7 @@
 #ifndef _YY_ALGORITHM_H_
 #define _YY_ALGORITHM_H_
 #include "YY_iterator.h"
+#include "YY_functional.h"
 #include <corecrt_memcpy_s.h>
 namespace YY
 {
@@ -171,11 +172,11 @@ namespace YY
 	//堆算法
 	//下面是push_heap的实现细节
 	//以下这组push_back()不允许指定"大小比较标准"
-	template<typename RandomAccessIterator,typename Distance,typename T>
-	void _push_heap(RandomAccessIterator first, Distance holeIndex, Distance topIndex, T value)
+	template<typename RandomAccessIterator,typename Distance,typename T,typename Compare>
+	void _push_heap(RandomAccessIterator first, Distance holeIndex, Distance topIndex, T value,Compare comp)
 	{
 		Distance parent = (holeIndex - 1) / 2;//找出父节点
-		while (holeIndex > topIndex && *(first + parent) < value)
+		while (holeIndex > topIndex && comp(*(first + parent), value))
 		{
 			//尚未到达顶端，且父节点小于新值
 			*(first + holeIndex) = *(first + parent);
@@ -184,33 +185,33 @@ namespace YY
 		}//持续至顶端，或满足heap次序特性为止
 		*(first + holeIndex) = value;//完成插入操作
 	}
-	template<typename RandomAccessIterator,typename Distance, typename T>
-	inline void _push_heap_aux(RandomAccessIterator first, RandomAccessIterator last, Distance*, T*)
+	template<typename RandomAccessIterator,typename Distance, typename T,typename Compare>
+	inline void _push_heap_aux(RandomAccessIterator first, RandomAccessIterator last, Distance*, T*,Compare comp)
 	{
-		_push_heap(first, Distance((last - first) - 1), Distance(0), T(*(last - 1)));
+		_push_heap(first, Distance((last - first) - 1), Distance(0), T(*(last - 1)),comp);
 	}
-	template<typename RandomAccessIterator>
-	inline void push_heap(RandomAccessIterator first, RandomAccessIterator last)
+	template<typename RandomAccessIterator,typename Compare = less<typename iterator_traits<RandomAccessIterator>::value_type>>
+	inline void push_heap(RandomAccessIterator first, RandomAccessIterator last,Compare comp= Compare{})
 	{
 		//注意，此函数被调用时，新元素应已置于底部容器的最尾端
-		_push_heap_aux(first, last, distance_type(first), value_type(first));
+		_push_heap_aux(first, last, distance_type(first), value_type(first),comp);
 	}
 	//下面是pop_heap的实现细节
-	template<typename RandomAccessIterator,typename Distance,typename T>
-	void _adjust_heap(RandomAccessIterator first, Distance holeIndex, Distance len, T value)
+	template<typename RandomAccessIterator,typename Distance,typename T,typename Compare>
+	void _adjust_heap(RandomAccessIterator first, Distance holeIndex, Distance len, T value, Compare comp)
 	{
 		Distance secondChild = 2 * holeIndex + 2;//洞节点的右节点
-		while (secondChild < len && (value < *(first+secondChild) || value< *(first+(secondChild-1))))
+		while (secondChild < len && (comp(value, *(first + secondChild)) || comp(value, *(first + (secondChild - 1)))))
 		{
 			//比较洞节点之左右两个值，然后以secondChild代表较大节点
-			if (*(first + secondChild) < *(first + (secondChild - 1)))
+			if (comp(*(first + secondChild) , *(first + (secondChild - 1))))
 				secondChild--;
 			*(first + holeIndex) = *(first + secondChild);
 			holeIndex = secondChild;
 			secondChild = 2 * holeIndex + 2;
 		}
 		*(first + holeIndex) = value;
-		if (secondChild == len && (value < *(first + (secondChild - 1))))
+		if (secondChild == len && comp(value, *(first + (secondChild - 1))))
 		{
 			secondChild--;
 			*(first + holeIndex) = *(first + secondChild);
@@ -218,37 +219,37 @@ namespace YY
 		}
 	}
 	//以下这组pop_heap不允许指定"大小比较标准"
-	template<typename RandomAccessIterator,typename T,typename Distance>
+	template<typename RandomAccessIterator,typename T,typename Distance,typename Compare>
 	inline void _pop_heap(RandomAccessIterator first, RandomAccessIterator last,
-						  RandomAccessIterator result, T value, Distance*)
+						  RandomAccessIterator result, T value, Distance*,Compare comp)
 	{
 		*result = *first;//设定尾值为首值，于是尾值即为欲求结果
-		_adjust_heap(first, Distance(0), Distance(last - first), value);
+		_adjust_heap(first, Distance(0), Distance(last - first), value,comp);
 		//以上重新调整heap，洞号为0，欲调整值为value
 	}
-	template<typename RandomAccessIterator,typename T>
-	inline void _pop_heap_aux(RandomAccessIterator first, RandomAccessIterator last, T*)
+	template<typename RandomAccessIterator,typename T,typename Compare>
+	inline void _pop_heap_aux(RandomAccessIterator first, RandomAccessIterator last, T*,Compare comp)
 	{
-		_pop_heap(first, last - 1, last - 1, T(*(last - 1)), distance_type(first));
+		_pop_heap(first, last - 1, last - 1, T(*(last - 1)), distance_type(first),comp);
 	}
-	template<typename RandomAccessIterator>
-	inline void pop_heap(RandomAccessIterator first, RandomAccessIterator last)
+	template<typename RandomAccessIterator,typename Compare = less<typename iterator_traits<RandomAccessIterator>::value_type>>
+	inline void pop_heap(RandomAccessIterator first, RandomAccessIterator last,Compare comp = Compare{})
 	{
-		_pop_heap_aux(first, last, value_type(first));
+		_pop_heap_aux(first, last, value_type(first),comp);
 	}
 	//下面是sort_heap的算法细节
-	template<typename RandomAccessIterator>
-	void sort_heap(RandomAccessIterator first, RandomAccessIterator last)
+	template<typename RandomAccessIterator,typename Compare = less<typename iterator_traits<RandomAccessIterator>::value_type>>
+	void sort_heap(RandomAccessIterator first, RandomAccessIterator last, Compare comp=Compare{})
 	{
 		//以下，每执行一次pop_heap，极值即被放在尾端
 		//扣除尾端再执行一次pop_heap，次极值又被放在新尾端。一直下去，最后即得到排序结果
 		while (last - first > 1)
-			pop_heap(first, last--);//每执行pop_heap一次，操作范围缩小1格
+			pop_heap(first, last--,comp);//每执行pop_heap一次，操作范围缩小1格
 	}
 	//下面是make_heap的算法细节
 	//以下这组make_heap()不允许指定"大小比较标准"
-	template<typename RandomAccessIterator,typename T,typename Distance>
-	void _make_heap(RandomAccessIterator first, RandomAccessIterator last, T*, Distance*)
+	template<typename RandomAccessIterator,typename T,typename Distance, typename Compare>
+	void _make_heap(RandomAccessIterator first, RandomAccessIterator last, T*, Distance*, Compare comp)
 	{
 		if (last - first < 2)
 			return;//如果长度小于2，不必重新排列
@@ -258,16 +259,16 @@ namespace YY
 		while (true)
 		{
 			//重排以holeIndex为首的子树
-			_adjust_heap(first, holeIndex, len, T(*(first + holeIndex)));
+			_adjust_heap(first, holeIndex, len, T(*(first + holeIndex)),comp);
 			if (holeIndex == 0)
 				return;
 			--holeIndex;
 		}
 	}
-	template<typename RandomAccessIterator>
-	inline void make_heap(RandomAccessIterator first, RandomAccessIterator last)
+	template<typename RandomAccessIterator,typename Compare = less<typename iterator_traits<RandomAccessIterator>::value_type>>
+	inline void make_heap(RandomAccessIterator first, RandomAccessIterator last, Compare comp = Compare{})
 	{
-		_make_heap(first, last, value_type(first), distance_type(first));
+		_make_heap(first, last, value_type(first), distance_type(first),comp);
 	}
 }
 
