@@ -11,6 +11,7 @@ namespace YY
 		using pointer = value_type *;
 		using iterator = value_type *;
 		using reference = value_type &;
+		using const_reference = const reference;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 	protected:
@@ -107,7 +108,7 @@ namespace YY
 		}
 		void pop_back()
 		{
-			--finish();
+			--finish;
 			destory(finish);
 		}
 		iterator erase(iterator position)

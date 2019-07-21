@@ -31,6 +31,32 @@ namespace YY
 		{
 			make_heap(c.begin(), c.end(), comp);
 		}
+		bool empty() const
+		{
+			return c.empty();
+		}
+		size_type size() const
+		{
+			return c.size();
+		}
+		const_reference top() const
+		{
+			return c.front();
+		}
+		reference top()
+		{
+			return c.front();
+		}
+		void push(const value_type& x)
+		{
+			c.push_back(x);
+			push_heap(c.begin(), c.end(), comp);
+		}
+		void pop()
+		{
+			pop_heap(c.begin(), c.end(), comp);
+			c.pop_back();
+		}
 	};
 }
 

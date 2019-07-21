@@ -176,7 +176,7 @@ namespace YY
 	void _push_heap(RandomAccessIterator first, Distance holeIndex, Distance topIndex, T value,Compare comp)
 	{
 		Distance parent = (holeIndex - 1) / 2;//找出父节点
-		while (holeIndex > topIndex && comp(*(first + parent), value))
+		while (holeIndex > topIndex && comp(value , *(first + parent)))
 		{
 			//尚未到达顶端，且父节点小于新值
 			*(first + holeIndex) = *(first + parent);
@@ -201,17 +201,17 @@ namespace YY
 	void _adjust_heap(RandomAccessIterator first, Distance holeIndex, Distance len, T value, Compare comp)
 	{
 		Distance secondChild = 2 * holeIndex + 2;//洞节点的右节点
-		while (secondChild < len && (comp(value, *(first + secondChild)) || comp(value, *(first + (secondChild - 1)))))
+		while (secondChild < len && (!comp(value, *(first + secondChild)) || !comp(value, *(first + (secondChild - 1)))))
 		{
 			//比较洞节点之左右两个值，然后以secondChild代表较大节点
-			if (comp(*(first + secondChild) , *(first + (secondChild - 1))))
+			if (comp(*(first + secondChild-1) , *(first + (secondChild))))
 				secondChild--;
 			*(first + holeIndex) = *(first + secondChild);
 			holeIndex = secondChild;
 			secondChild = 2 * holeIndex + 2;
 		}
 		*(first + holeIndex) = value;
-		if (secondChild == len && comp(value, *(first + (secondChild - 1))))
+		if (secondChild == len && !comp(value, *(first + (secondChild - 1))))
 		{
 			secondChild--;
 			*(first + holeIndex) = *(first + secondChild);
