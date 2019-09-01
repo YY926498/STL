@@ -1,3 +1,7 @@
+#include "YY_allocator.h"
+#include "YY_algorithm.h"
+#include "YY_construct.h"
+#include "YY_memory.h"
 #ifndef _YY_DEQUE_H_
 #define _YY_DEQUE_H_
 

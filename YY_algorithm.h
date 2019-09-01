@@ -3,6 +3,7 @@
 #include "YY_iterator.h"
 #include "YY_functional.h"
 #include <corecrt_memcpy_s.h>
+#include "YY_type_traits.h"
 namespace YY
 {
 	//以下是整组的distance函数

@@ -1,3 +1,4 @@
+#include "YY_deque.h"
 #ifndef _YY_STACK_H_
 #define _YY_STACK_H_
 
