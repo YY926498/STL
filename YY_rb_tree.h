@@ -216,6 +216,16 @@ namespace YY
 		{
 			return static_cast<link_type&>(header->parent);
 		}
+		link_type& leftmost() const
+		{
+			return static_cast<link_type&>(header->left);
+		}
+		link_type& rightmost()const
+		{
+			return static_cast<link_type&>(header->right);
+		}
+
+		//
 
 	};
 }
