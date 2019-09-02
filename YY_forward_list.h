@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <iterator>
 #include "YY_iterator.h"
+#include "YY_allocator.h"
 #ifndef _YY_FORWARD_LIST_
 #define _YY_FORWARD_LIST_
 
@@ -9,6 +10,7 @@ namespace YY
 	struct _forward_list_node_base
 	{
 		_forward_list_node_base* next;
+		_forward_list_node_base(_forward_list_node_base* x=nullptr) :next(x) {}
 	};
 
 	//单向链表的节点结构
@@ -65,7 +67,7 @@ namespace YY
 	{
 		using iterator = _forward_list_iterator<T, T&, T*>;
 		using const_iterator = _forward_list_iterator<T, const T&, const T*>;
-		using self = _forward_list_iterator = _forward_list_iterator<T, Ref, Ptr>;
+		using self = _forward_list_iterator<T, Ref, Ptr>;
 
 		using value_type = T;
 		using pointer = Ptr;
@@ -79,8 +81,114 @@ namespace YY
 
 		reference operator*() const { return (static_cast<list_node*>(node))->data; }
 		pointer operator->()const { return &(operator*()); }
+
+		self& operator++()
+		{
+			incr();//前进一个节点
+			return *this;
+		}
+		self operator++(int)
+		{
+			self tmp = *this;
+			incr();
+			return tmp;
+		}
 	};
 	
+	template<typename T,typename Alloc = alloc>
+	class forward_list
+	{
+	public:
+		using value_type = T;
+		using pointer = value_type *;
+		using const_pointer = const value_type*;
+		using reference = value_type &;
+		using const_reference = const value_type &;
+		using size_type = size_t;
+		using difference_type = ptrdiff_t;
+
+		using iterator = _forward_list_iterator<T, T&, T*>;
+		using const_iterator = _forward_list_iterator<T, const T&, const T*>;
+
+	private:
+		using list_node = _forward_list_node<T>;
+		using list_node_base = _forward_list_node_base;
+		using iterator_base = _forward_list_iterator_base;
+		using list_node_allocator = simple_alloc<list_node, Alloc>;
+
+		static list_node* create_node(const value_type& x)
+		{
+			list_node* node = list_node_allocator::allocate();//配置空间
+			construct(&node->data, x);
+			node->next = nullptr;
+			return node;
+		}
+		static void destory_node(list_node* node)
+		{
+			destory(&node->data);//将元素析构
+			list_node_allocator::deallocate(node);//释放空间
+		}
+
+	private:
+		list_node_base head;//头部，不是指针，是实体
+
+	public:
+		explicit forward_list(): head(){  }
+		explicit forward_list(const std::initializer_list<T>& x) 
+		{
+			auto it = x.end();
+			--it;
+			auto beg = x.begin();
+			for (; it != beg; --it)
+				push_front(*it);
+			push_front(*beg);
+		}
+		~forward_list() { clear(); }
+
+	public:
+		iterator begin() { return iterator(static_cast<list_node*>(head.next)); }
+		iterator end() { return iterator(nullptr); }
+		size_type size()const { return _forward_list_size(head.next); }
+		bool empty()const { return head.next == nullptr; }
+
+		//两个forward_list互换，只要将head交换互换即可
+		void swap(forward_list& L)
+		{
+			list_node_base* tmp = head.next;
+			head.next = L.head.next;
+			L.head.next = tmp;
+		}
+
+	public:
+		//取头部元素
+		reference front() { return static_cast<list_node*>(head.next)->data; }
+		//从头部插入元素（新元素成为forward_list的第一个元素
+		void push_front(const value_type& x)
+		{
+			_forward_list_make_list(&head, create_node(x));
+		}
+
+		//注意，没有push_back
+		//从头部取走元素（删除），修改head
+		void pop_front()
+		{
+			if (head.next == nullptr)
+				return;
+			list_node* node = static_cast<list_node*>(head.next);
+			head.next = node->next;
+			destory_node(node);
+		}
+
+		void clear()
+		{
+			while (head.next != nullptr)
+			{
+				list_node* tmp = static_cast<list_node*>(head.next);
+				head.next = tmp->next;
+				destory_node(tmp);
+			}
+		}
+	};
 }
 
 
