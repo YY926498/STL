@@ -168,6 +168,13 @@ namespace YY
 		*rhs = tmp;
 	}
 
+	template<typename T>
+	inline void swap(T& lhs, T& rhs)
+	{
+		T temp = lhs;
+		lhs = rhs;
+		rhs = temp;
+	}
 
 
 	//∂—À„∑®
